@@ -1,0 +1,7 @@
+\subsection{Assumptions}
+
+The following assumption is the \emph{Bilinear Diffie-Hellmann Knowledge Exponent} (BDH-KE) Assumption presented by Abdomaleki et al. (\cite{AC:ABLZ17}) adapted to the first source group contains the generated elements. We call this assumption as \emph{Single Group Bilinear Diffie-Hellman Knowledge Exponent Assumption}.
+
+\begin{assumption}[Single Group BDH-KE Assumption] Given $\gk=(p,\G_1,\G_2,\G_T,e)$, $\mathcal{G}_1$, $\mathcal{G}_2$ generators of $\G_1$, $\G_2$, respec., the SGBDH-KE Assumption holds if, for all non-uniform polynomial time adversary $\mathcal{A}$ there exists an extractor $\mathcal{X}_{\mathcal{A}}$ such that
+	$$\text{Pr}\left[ \left([c]_1,[c_0]_1\right)\gets \left(\mathcal{A},\mathcal{X}_{\mathcal{A}}\right)\left(\gk,\mathcal{G}_1,\mathcal{G}_2,[\phi]_{1,2}\right)\right] \approx 0.$$
+\end{assumption}
