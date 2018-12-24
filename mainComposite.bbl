@@ -1,3 +1,36 @@
-\begin{thebibliography}{}
+\begin{thebibliography}{1}
+
+\bibitem{AC:ABLZ17}
+B.~Abdolmaleki, K.~Baghery, H.~Lipmaa, and M.~Zajac.
+\newblock A subversion-resistant {SNARK}.
+\newblock In T.~Takagi and T.~Peyrin, editors, {\em Advances in Cryptology --
+  {ASIACRYPT}~2017, Part~III}, volume 10626 of {\em Lecture Notes in Computer
+  Science}, pages 3--33, Hong Kong, China, Dec.~3--7, 2017. Springer,
+  Heidelberg, Germany.
+
+\bibitem{AC:GonHevRaf15}
+A.~Gonz{\'a}lez, A.~Hevia, and C.~R{\`a}fols.
+\newblock {QA}-{NIZK} arguments in asymmetric groups: New tools and new
+  constructions.
+\newblock In T.~Iwata and J.~H. Cheon, editors, {\em Advances in Cryptology --
+  {ASIACRYPT}~2015, Part~I}, volume 9452 of {\em Lecture Notes in Computer
+  Science}, pages 605--629, Auckland, New Zealand, Nov.~30~--~Dec.~3, 2015.
+  Springer, Heidelberg, Germany.
+
+\bibitem{EC:Groth16}
+J.~Groth.
+\newblock On the size of pairing-based non-interactive arguments.
+\newblock In M.~Fischlin and J.-S. Coron, editors, {\em Advances in Cryptology
+  -- {EUROCRYPT}~2016, Part~II}, volume 9666 of {\em Lecture Notes in Computer
+  Science}, pages 305--326, Vienna, Austria, May~8--12, 2016. Springer,
+  Heidelberg, Germany.
+
+\bibitem{EC:GroSah08}
+J.~Groth and A.~Sahai.
+\newblock Efficient non-interactive proof systems for bilinear groups.
+\newblock In N.~P. Smart, editor, {\em Advances in Cryptology --
+  {EUROCRYPT}~2008}, volume 4965 of {\em Lecture Notes in Computer Science},
+  pages 415--432, Istanbul, Turkey, Apr.~13--17, 2008. Springer, Heidelberg,
+  Germany.
 
 \end{thebibliography}

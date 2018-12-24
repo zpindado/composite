@@ -6,89 +6,107 @@ Given $z \in \Z_p$, we present a proof of knowledge of a value $x\in \Z_p$ such 
 We want to prove these three statements together in a single and succinct proof:
 \begin{enumerate}
 	\item Knowledge of $x \in \Z_p$ such that $y=x \mathcal{G}\in \G$ where $\mathcal{G}$ is the generator of $\G$. 
-	\item Knowledge of $[\overline{y}] \in \G$ such that $H(\overline{y})=z$. 
+	\item Knowledge of $\overline{y} \in \G$ such that $H(\overline{y})=z$. 
 	\item Finally, that $y=\overline{y}$.
 \end{enumerate}
 We have to prove all three conditions above by not leaking $[y]$, netiher $[\overline{y}]$!! The main ideas to prove them are explained in the following:
 \begin{enumerate}
-	\item We can prove knowledge of $x$ by producing a tuple ($[y], [\psi], [y_0]$) such that $e([y],[\psi])=e([y_0],[1])$, i.e. $[y_0]=[y \psi]$, for some given $[\psi] \in \G$ in the CRS. Applying KEA to this tuple we will have knowledge of $x$. The verification equation could be proven by a Groth-Sahai proof.
-	\item SNARK of Groth is composed by 3 elements \cite{EC:Groth16}:
+	\item We can prove knowledge of $x$ by producing a tuple ($[y], [\psi], [y_0]$) such that $e([y],[\psi])=e([y_0],[1])$, i.e. $[y_0]=[y \psi]$, for some given $[\psi] \in \G$ in the CRS. Applying $\SGBDHKE$ assumption to this tuple we will have knowledge of $x$. The verification equation could be proven by a Groth-Sahai proof.
+	\item SNARK of Groth is composed by these 3 elements \cite{EC:Groth16}:
 	\[\begin{split}
 	[A]_1 = &\left[\alpha + \sum_{i=0}^m \overline{a}_i v_i(s) + r_1 \delta\right]_1  \hspace{40pt} [B]_2 = \left[\beta + \sum_{i=0}^m \overline{a}_i w_i(s) + r_2 \delta\right]_2\\
-	[C]_1 = &\left[\frac{\sum_{i=n_0+1}^m \overline{a}_i\left(\beta v_i(s)+\alpha w_i(s)+y_i(s)+h(s)t(s)\right)+h(s)t(s)}{\delta}+Ar_2+B r_1+ r_1r_2\delta \right]_1
+	[C]_1 = &\left[\frac{\sum_{i=0}^m \overline{a}_i\left(\beta v_i(s)+\alpha w_i(s)+y_i(s)+h(s)t(s)\right)}{\delta}+Ar_2+B r_1+ r_1r_2\delta \right]_1
 	\end{split}\]
 	where $\{v_i(X),w_i(X),y_i(X)\}$ are the polynomials of the QAP, $s\in \Z_p$ is the secret point used to evaluate the polynomials in the CRS.
-	We will use the same idea but we will split the element $A$ into two different commitments: $[A_0]$ containing just the secret input elements of the assignment $(\overline{a}_0,\dots,\overline{a}_{n_0})$, which will correspond with $\overline{y}$, and $[A_1]$ is the commitment of the evaluation of the input on $C_H$ $(\overline{a}_{n_0+1},\dots,\overline{a}_m)$.
+	We will use the same construction for $(\overline{a}_0,\dots,\overline{a}_{n_0})$, which will correspond with $\overline{y}$, the input on $C_H$, and the evaluation $(\overline{a}_{n_0+1},\dots,\overline{a}_m)$, which includes the result of middle gates and the output of the circuit (if the evaluation is correct then $\overline{a}_m=z$).
 	\item We can prove that $\overline{y}=y$ by a membership proof that gives us the vector
 	$$\left[\begin{array}{c}
-	A_0\\
-	c\\
-	\end{array}\right] \in \text{Im}\left[\begin{array}{c c c c c c}
-	v_0(s) & \dots & v_{n_0}(s) & \delta & 0 & 0 \\
-	2^0\vec{e}_2 & \dots & 2^{n_0} \vec{e}_2 & 0 & \vec{u}_1 & \vec{u}_2\\
+	A\\
+	c_y\\
+	\end{array}\right] \in \text{Im}\left[\begin{array}{c c c c c c c c c}
+	v_0(s) & \dots & v_{n_0}(s) & v_{n_0+1}(s) & \dots & v_{m}(s) &\delta & 0 & 0 \\
+	2^0\vec{e}_2 & \dots & 2^{n_0} \vec{e}_2 & 0 &\dots &0 & 0 & \vec{u}_1 & \vec{u}_2\\
 	\end{array}\right],$$
-	where $[c]$ is a Groth-Sahai commitment of the representation of $y \in \G$ in the perfectly binding setting and $[A_0]$ is the commitment from SNARK with the representation of $\overline{y}$. This proofs give us both commitments open to same representation, i.e. $\vec{a} = \overline{\vec{a}}$, \color{red}so $y=\overline{y}$\color{black}.
+	where $[c_y]$ is a Groth-Sahai commitment of the representation of $y \in \G$ in the perfectly binding setting and $[A]$ is the commitment from SNARK with the representation of $\overline{y}$ ($\overline{\vec{a}}=(\overline{a}_0,\dots,\overline{a}_{n_0})$) and its evaluation in the circuit ($a_{n_0},\dots,a_m$). This proofs give us both commitments open to same representation because perfectly binding of G-S commitments. Thus, $\vec{a} = \overline{\vec{a}}$, which uniquely define respective $y$ and $\overline{y}$, so $y=\overline{y}$.
 \end{enumerate}
 
 
 \subsection{Proof}
 
 
-$\gk  := (p,\G_1,\G_2,\G_T,\mathcal{G}_1,\mathcal{G}_2,e)$, where $DH$, $KEA$,... hold.
+$\gk  := (p,\G_1,\G_2,\G_T,\mathcal{G}_1,\mathcal{G}_2,e)$, where Diffie-Hellman Assumption and $\SGBDHKE$ assumption hold.
 
 \paragraph{Setup.} \begin{itemize}
-	\item Algorithm $\algK_0(\gk)$: For Groth-Sahai proof sample $\vec{u}_1,\vec{v} \gets \Z_p^2$, $\phi\gets \Z_p$ uniformly at random and compute a vector $\vec{u}_2\in \Z_p^2$ linear independent to $\vec{u}_2$.\\
-	For SNARK proof compute QAP of the circuit $C_H$: $\left(\{v_i(X), w_i(X), y_i(X)\}_{i=1}^m, t(X)\right)$ of degree $n$. Sample $s \gets \Z_p$ uniformly at random to compute evaluation of QAP polynomials at point $s$ in $\G_1, \G_2$. Sample also $\alpha, \beta, \gamma, \delta \in \Z_p$ uniformaly at random.\\
-	For membership proof sample $\mathbf{A} \gets \mathcal{D}_2$,
-	$\mathbf{\Delta}\gets \Z_p^{2\times 2}$. Compute $[\mathbf{A}_{\mathbf{\Delta}}]_2=[\mathbf{\Delta}^{\top}\mathbf{A}]_2 \in \G_2^{2\times 2}$, $[\mathbf{M}_{\mathbf{\Delta}}]_1=[\mathbf{\Delta}\mathbf{M}]_1 \in \G_1^{2\times (n_0+3)}$, 
+	\item Algorithm $\algK_0(\gk)$: Sample $\mathbf{A} \gets \mathcal{D}_1$ \\
+	\item Algorithm $\algK_1(\gk,\mathbf{A} )$: For Groth-Sahai proof sample a vector $\vec{u}_1 \gets \Z_p^2$, $\phi\gets \Z_p$ uniformly at random and compute a vector $\vec{u}_2\in \Z_p^2$ linear independent to $\vec{u}_1$.\\
+	For SNARK proof compute QAP of the circuit $C_H$, $\{v_i(X), w_i(X), y_i(X)\}_{i=1}^m$, $t(X)$ of degree $n$. Sample $s \gets \Z_p$ uniformly at random to compute evaluation of QAP polynomials at point $s$ in $\G_1, \G_2$. Sample also $\alpha, \beta,  \delta \in \Z_p$ uniformly at random.\\
+	For membership proof sample
+	$\mathbf{\Delta}\gets \Z_p^{2\times 3}$. Compute $[\mathbf{A}_{\mathbf{\Delta}}]_2=[\mathbf{\Delta}^{\top}\mathbf{A}]_2 \in \G_2^{3\times 1}$, $[\mathbf{M}_{\mathbf{\Delta}}]_1=[\mathbf{\Delta}\mathbf{M}]_1 \in \G_1^{3\times (m+3)}$, 
 	where 
-	$\mathbf{M}=\left(\begin{array}{c c c c c c}
-	v_1(s) & \dots & v_k(s) & \delta & 0 & 0 \\
-	2^0\vec{e}_2 & \dots & 2^k \vec{e}_2 & 0 & \vec{u}_1 &\vec{u}_2\\
-	\end{array}\right) \in \Z_p^{2\times (n_0+3)}.$\\
+	$$\mathbf{M}=\left(\begin{array}{c c c c c c c c c}
+	v_0(s) & \dots & v_{n_0}(s) & v_{n_0+1}(s) & \dots & v_{m}(s) &\delta & 0 & 0 \\
+	2^0\vec{e}_2 & \dots & 2^{n_0} \vec{e}_2 & 0 &\dots &0 & 0 & \vec{u}_1 & \vec{u}_2\\
+	\end{array}\right) \in \Z_p^{3\times (m+3)}.$$\\
 	The CRS includes the elements 	
 	\[\begin{split}
-	&\left(\gk,[\vec{u}_1]_1,[\vec{u}_2]_1,[\vec{v}]_2,[\phi]_{1,2},[\alpha]_{1},[\beta]_{1,2},[\delta]_{1,2},[\gamma]_2,[\mathbf{M}_{\mathbf{\Delta}}]_1,[\mathbf{A}_{\mathbf{\Delta}}]_2,\left\{\left[s^{i}\right]_{1,2}\right\}_{i\in\{1,\dots,n-1\}},\right.\\
+	&\left(\gk,[\vec{u}_1]_1,[\vec{u}_2]_1,[\phi]_{1,2},[\alpha]_{1},[\beta]_{1,2},[\delta]_{1,2},[\gamma]_2,[\mathbf{M}_{\mathbf{\Delta}}]_1,[\mathbf{A}]_2,[\mathbf{A}_{\mathbf{\Delta}}]_2,\left\{\left[s^{i}\right]_{1,2}\right\}_{i\in\{1,\dots,n-1\}},\right.\\
 	&\left.
-	\left\{\left[\frac{s^i t(s)}{\delta}\right]_1\right\}_{i=0}^{n-2},\left\{\left[\frac{\beta v_i(s)+\alpha w_i(s) +y_i(s)}{\gamma}\right]_1\right\}_{i=0}^{n_0},\left\{\left[\frac{\beta v_i(s)+\alpha w_i(s) +y_i(s)}{\delta}\right]_2\right\}_{i=n_0+1}^{m}\right)
+	\left\{\left[\frac{s^i t(s)}{\delta}\right]_1\right\}_{i=0}^{n-2},
+	%\left\{\left[\frac{\beta v_i(s)+\alpha w_i(s) +y_i(s)}{\gamma}\right]_1\right\}_{i=0}^{n_0},
+	\left\{\left[\frac{\beta v_i(s)+\alpha w_i(s) +y_i(s)}{\delta}\right]_2\right\}_{i=n_0+1}^{m}\right)
 	\end{split}\]
 	
-	The trapdoor: $\tau = (\vec{u}_1,\vec{u}_2,\vec{v}, \alpha, \beta,\gamma,\delta, s, \mathbf{\Delta})$.
+	The trapdoor: $\tau = (%\vec{u}_1,\vec{u}_2, 
+	\alpha, \beta,\delta, \mathbf{\Delta})$.
 \end{itemize} 
 
 
 \noindent \textit{Prover}. 
 \begin{itemize}
 	\item The prover $\algP$ with input $(\textnormal{CRS},x)$ defines $[y]=x\mathcal{G}_1 \in \G_1$ and computes the following binary representation of $y= (P_x, P_y) \in \mathbb{F}_p$:
-	$(a_{0},\dots,a_{n_0}) \in \{0,1\}^{n_0+1}$, where $\sum_{i=0}^{n_0} a_i 2^i=P_x\in \mathbb{F}_p$ and $a_{n_0} = sign(P_y)$.\\
-	Evaluate $(a_{0},\dots,a_{n_0})$ in the circuit $C_H((a_{0},\dots,a_{n_0}))$ to obtain the whole assignment $\vec{a}\in \{0,1\}^m$ (this includes input of the circuit, middle gates, output of the circuit). Compute a SNARK proof $\pi_{\textsf{SNARK}}:=([A_0]_1,[A_1]_1,[B]_2,[C]_1)$ for circuit satisfiability of $C_H$ with input $(a_0,\dots,a_{n_0})$ such that $C_H((a_0,\dots,a_{n_0}))=z$, where
+	$(a_{0},\dots,a_{n_0}) \in \{0,1\}^{n_0+1}$, where $\sum_{i=0}^{n_0-1} a_i 2^i=P_x\in \mathbb{F}_p$ and $a_{n_0} = sign(P_y)$.\\
+	Evaluate $(a_{0},\dots,a_{n_0})$ in the circuit $C_H((a_{0},\dots,a_{n_0}))$ to obtain the whole assignment $\vec{a}\in \{0,1\}^m$ (this includes input of the circuit, middle gates and output of the circuit) and compute corresponding SNARK proof $\pi_{\textsf{SNARK}}:=([A]_1,[B]_2,[C]_1)$ for circuit satisfiability of $C_H((a_0,\dots,a_{n_0}))=z$, where
 	\[\begin{split}
-	[A]_0 = &\left[\sum_{i=0}^k a_i v_i(s) + r_1 \delta\right]_1  \hspace{40pt} [A]_1=\left[\alpha + \sum_{i=k+1}^m a_i v_i(s) + r_2 \delta\right]_1\\
-	[B]_2 = &\left[\beta + \sum_{i=0}^m a_i w_i(s) + r_3 \delta\right]_2\\
-	[C]_1 = &\left[\frac{\sum_{i=n_0+1}^m a_i\left(\beta v_i(s)+\alpha w_i(s)+y_i(s)+h(s)t(s)\right)+h(s)t(s)}{\delta}+Ar_3\right.\\
-	&\left.+B (r_1+r_2)+ (r_1+r_2)r_3\delta\right]_1,
+	[A]_1=&\left[\alpha + \sum_{i=0}^m a_i v_i(s) + r_1 \delta\right]_1\\
+	[B]_2 = &\left[\beta + \sum_{i=0}^m a_i w_i(s) + r_2 \delta\right]_2\\
+	[C]_1 = &\left[\frac{\sum_{i=0}^m a_i\left(\beta v_i(s)+\alpha w_i(s)+y_i(s)+h(s)t(s)\right)}{\delta}+Ar_2+B r_1+ r_1r_2\delta\right]_1,
 	\end{split}\]
-	for some $r_1,r_2,r_3 \gets \Z_p$ chosen uniformly at random.\\
+	for some $r_1,r_2 \gets \Z_p$ chosen uniformly at random.\\
 	Compute $[y_0]_1=x[\phi]_1\in\G_1$ and a Groth-Sahai proof for the pairing equation
 	\begin{equation}\label{GS1}
-	e([y]_1,[\phi]_2)=e([y_0]_1,[1]_2),
+	e([y]_1,[\phi]_2)=e([y_0]_1,[\mathcal{G}_2]_2),
 	\end{equation}
-	$\pi_{\textsf{G-S}}:=([\theta_1]_1,[\theta_2]_1)$ such that
+	which is transformed to
 	\begin{equation}\label{GS2}
-	F([c]_1,[\phi]_2\vec{e}_1)+F([\theta_1]_1,[\vec{v}]_2) = F([c_2]_1,[\vec{v}]_2)+F([\theta_2]_1,[\phi]_2\vec{e}_1)
+	e([\vec{c}_y]_1,[\phi]_2\vec{e}_2)= e([\vec{c}_{y_0}]_1,[\vec{e}_2]_2)+e([\vec{u}_1]_1,[\vec{\pi}_1]_2)+e([\vec{u}_2]_1,[\vec{\pi}_2]_2)
 	\end{equation}
-	where $[c]_1=\sum a_i 2^i [\vec{e}_2]_1+r_4[\vec{u}_1]_1 + r_5[\vec{u}_2]_1$, $[c_2]_1 = [y_0]_1\vec{e}_2 + s_1[\vec{u}_1]_1+s_2[\vec{u}_2]_1$ for some $r_4,r_5,s_1,s_2\gets \Z_p$ chosen uniformly at random.\\
-	The prover also computes a membership proof $\psi=[\mathbf{M}_{\mathbf{\Delta}}]_1(\vec{a},r_1,r_4,r_5)^{\top}\in \G_1^{2}$ of 
+	where 
+	$$\begin{array}{ll}	
+	\left[\vec{c}_y\right]_1=\sum a_i 2^i [\vec{e}_2]_1+r_3[\vec{u}_1]_1 + r_4[\vec{u}_2]_1,\quad &[\vec{c}_{y_0}]_1 = [y_0]_1\vec{e}_2 + s_1[\vec{u}_1]_1+s_2[\vec{u}_2]_1,\\
+	\left[\vec{\pi}_1\right]_2=r_3[\phi]_2\vec{e}_2-s_1[\vec{e}_2]_2,\quad &
+	[\vec{\pi}_2]_2=r_4[\phi]_2\vec{e}_2-s_2[\vec{e}_2]_2\\	
+	\end{array}$$
+	for some $r_3,r_4,s_1,s_2\gets \Z_p$ chosen uniformly at random. Then,
+	$\pi_{\textsf{G-S}}:=([\pi_1]_1,[\pi_2]_1)$ where $[\pi_i]_2$ is the second component of $[\vec{\pi}_i]_2$ respectively.\\
+	The prover also computes a membership proof $\pi_{\psi}:=[\mathbf{M}_{\mathbf{\Delta}}]_1(\vec{a},r_1,r_4,r_5)^{\top}\in \G_1$ of 
 	$$\left[\begin{array}{c}
-	A_0\\
-	c\\
+	A\\
+	\vec{c}_y\\
 	\end{array}\right]_1 \in \text{Im}\left(\left[\mathbf{M}\right]_1\right).$$	
-	Finally, it sends the proof $\pi:= \left(\pi_{\textsf{SNARK}}, \pi_{\textsf{G-S}},[c]_1,[c_2]_1,\psi\right)$ to the verifier.
+	Finally, it sends the proof $\pi:= \left(\pi_{\textsf{SNARK}},[\vec{c}_y]_1,[\vec{c}_{y_0}]_1, \pi_{\textsf{G-S}},\pi_\psi\right)$ to the verifier.
 \end{itemize}
 
 \noindent \textit{Verifier}. 
 
-The verifier $\algV$ with input $(\textnormal{CRS},\pi)$ verify the proofs $\pi_{\textsf{SNARK}}$, $\pi_{\textsf{G-S}}$, $\psi$.
+The verifier $\algV$ with input $(\textnormal{CRS},\pi)$ verify the proofs $\pi_{\textsf{SNARK}}$, $\pi_{\textsf{G-S}}$, $\pi_{\psi}$, respectively:
+\[\begin{split}
+&e\left(\left[A\right]_1,\left[B\right]_2\right)=\left([\alpha]_1,[\beta]_2\right)+e\left([C]_1,[\delta]_2\right)\\
+&e\left(\left[\begin{array}{c}
+A\\
+\vec{c}_y
+\end{array}\right]_1^{\top},\left[\mathbf{A}_{\mathbf{\Delta}}\right]_2\right)=e\left(\left[\pi_{\psi}\right]_1^{\top},\left[\mathbf{A}\right]_2\right)\\
+&e([\vec{c}_y]_1,[\phi]_2\vec{e}_2)= e([\vec{c}_{y_0}]_1,[\vec{e}_2]_2)+e([\vec{u}_1]_1,[\vec{\pi}_1]_2)+e([\vec{u}_2]_1,[\vec{\pi}_2]_2)
+\end{split}\]
 
 \subsubsection*{Soundness}
 %Assume that there is an advesary $\mathcal{A}$ that breaks soundness, i.e. it sends a proof $\pi$ such that \textit{Verifier}$(\pi)=1$ but at least one of these events occurs:
@@ -106,11 +124,11 @@ A\\
 
 $A$ is a perfectly hiding commitment, so many $\vec{\hat{w}}$ may produce same 
 $$A=\left[\overline{\mathbf{M}}\right]_1\vec{\hat{w}}=\left[\overline{\mathbf{M}}\right]_1\vec{w},$$
- but $\vec{c}_y$ is a perfectly binding commitment because is a G-S commitment in the soundness setting and moreover $\vec{c}_y$ is extractable. Thus, $[y]_1 \in \G_1$ is the unique possible opening to $[\vec{c}_y]_1$, which fixes the first $n_0$ components of $\vec{a}$ in $A$ (because $y$ is represented uniquely as $y=\sum a_i 2^i$).
+ but $\vec{c}_y$ is a perfectly binding commitment because is a G-S commitment in the soundness setting and moreover $\vec{c}_y$ is extractable. Thus, $[y]_1 \in \G_1$ is the unique possible opening to $[\vec{c}_y]_1$, which fixes the first $n_0$ components of $\vec{a}$ in $A$ (because $y$ is represented uniquely as $y=\sum_{i=0}^{n_0} a_i 2^i$).
 
-For soundness of the SNARK proof is accepted, we have a proof of knowledge of some pre-image $\overline{y}$ of $H$ such that $H(\overline{y})=z$, which can be represented as $\overline{y} = \sum \overline{a}_i 2^i$.
+The SNARK proof is a proof of knowledge of some pre-image $\overline{y}$ of $H$ such that $H(\overline{y})=z$, so for SNARK soundness we have knowledge of this pre-image, which can be represented as $\overline{y} = \sum_{i=0}^{n_0} \overline{a}_i 2^i$.
 
-For the G-S proof, we have a tuple $([y]_1,[\phi]_{1,2},[y_0]_1)$ such that $e([y]_1, [\phi]_2) =e([y_0]_1,[1]_2)$, so the prover has to know $x \in \Z_p$ such that $[y]_1 = x \mathcal{G}$ for KEA assumption.
+For extractability of G-S commitments, $[y]_1,[y_0]_1$ can be extracted efficiently and also, for the G-S proof, we have a tuple $([y]_1,[\phi]_{1,2},[y_0]_1)$ such that $e([y]_1, [\phi]_2) =e([y_0]_1,[\mathcal{G}_2]_2)$. So, for $\SGBDHKE$ assumption the prover has knowledge of $x \in \Z_p$ such that $[y]_1 = x \mathcal{G}_1$.
 
 %Assume the event $E_3$ occurs for $\overline{y}, y \in \G_1$ that could be represented uniquely as
 %\[y=\sum_{i=0}^{n_0} a_i 2^i, \quad\quad \overline{y}=\sum_{i=0}^{n_0} \overline{a}_i 2^i,\]
@@ -126,4 +144,17 @@ For the G-S proof, we have a tuple $([y]_1,[\phi]_{1,2},[y_0]_1)$ such that $e([
 
 \subsubsection*{Zero-Knowledge}
 
-The simulator $\algS$ with input CRS, $\tau = (\vec{u}_1,\vec{u}_2,\vec{v}, \alpha, \beta,\gamma,\delta, s, \mathbf{\Delta})$, is a compound simulator of the respective proofs SNARK \cite{EC:Groth16}, Membership proof in linear spaces \cite{AC:GonHevRaf15} and Groth-Sahai proof \cite{EC:GroSah08}.
+The simulator $\algS$ with input CRS, $\tau = (%\vec{u}_1,\vec{u}_2,
+ \alpha, \beta,\delta, \mathbf{\Delta})$, is a compound simulator of the respective proofs:
+\begin{itemize}
+	\item SNARK simulator (\cite{EC:Groth16}) sample $A^S,B^S\gets \Z_p$, compute $C^S=\displaystyle\frac{A^S B^S-\alpha \beta}{\delta}$ and $[A^S]_1,[B^S]_2,[C^S]_1$ have same distribution as honest SNARK proof.
+	\item Membership proof in linear spaces simulator (\cite{AC:GonHevRaf15}) sample
+	$\mathbf{\Delta} \left[\begin{array}{c}
+	A^S\\
+	\vec{c}_y^S
+	\end{array}\right]_1$, 
+	where $[\vec{c}_y^S]_1=0[\vec{e}_2]_1+r_3[\vec{u}_1]_1+r_4[\vec{u}_2]_1$ is the commitment to $0$, which for perfectly hiding of G-S commitments in zero-knowledge setting has the same distribution of honest $[\vec{c}_y]_1$, and so $\pi_{\psi}^S$.
+	\item Our simulator computes $[\vec{c}_{y_0}^S]_1=0[\phi]_1\vec{e}_2+s_1[\vec{u}_1]_1+s_2[\vec{u}_2]_1$ and above $[\vec{c}_y^S]_1$, with same distribution as honest ones.
+	\item Groth-Sahai proof simulator \cite{EC:GroSah08} computes
+	$[\pi_1^S]_2= [\phi]_2 r_3 -s_1[\mathcal{G}_2]_2, \quad \quad[\pi_2^S]_2=[\phi]_2 r_4 -s_2[\mathcal{G}_2]_2.$
+\end{itemize}  

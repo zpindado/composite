@@ -1,0 +1,17 @@
+
+*.gz
+*.gz
+mainComposite.pdf
+mainComposite.aux
+mainComposite.bbl
+mainComposite.blg
+mainComposite.brf
+mainComposite.log
+mainComposite.pdf
+mainComposite.synctex.gz
+*.aux
+*.bbl
+*.blg
+*.brf
+*.brf
+*.pdf
