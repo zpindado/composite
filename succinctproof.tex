@@ -9,7 +9,7 @@ We want to prove these three statements together in a single and succinct proof:
 	\item Knowledge of $\overline{y} \in \G$ such that $H(\overline{y})=z$. 
 	\item Finally, that $y=\overline{y}$.
 \end{enumerate}
-We have to prove all three conditions above by not leaking $[y]$, netiher $[\overline{y}]$!! The main ideas to prove them are explained in the following:
+We have to prove all three conditions above by not leaking $[y]$, neither $[\overline{y}]$!! The main ideas to prove them are explained in the following:
 \begin{enumerate}
 	\item We can prove knowledge of $x$ by producing a tuple ($[y], [\psi], [y_0]$) such that $e([y],[\psi])=e([y_0],[1])$, i.e. $[y_0]=[y \psi]$, for some given $[\psi] \in \G$ in the CRS. Applying $\SGBDHKE$ assumption to this tuple we will have knowledge of $x$. The verification equation could be proven by a Groth-Sahai proof.
 	\item SNARK of Groth is composed by these 3 elements \cite{EC:Groth16}:
@@ -21,7 +21,7 @@ We have to prove all three conditions above by not leaking $[y]$, netiher $[\ove
 	We will use the same construction for $(\overline{a}_0,\dots,\overline{a}_{n_0})$, which will correspond with $\overline{y}$, the input on $C_H$, and the evaluation $(\overline{a}_{n_0+1},\dots,\overline{a}_m)$, which includes the result of middle gates and the output of the circuit (if the evaluation is correct then $\overline{a}_m=z$).
 	\item We can prove that $\overline{y}=y$ by a membership proof that gives us the vector
 	$$\left[\begin{array}{c}
-	A\\
+	A - \alpha\\
 	c_y\\
 	\end{array}\right] \in \text{Im}\left[\begin{array}{c c c c c c c c c}
 	v_0(s) & \dots & v_{n_0}(s) & v_{n_0+1}(s) & \dots & v_{m}(s) &\delta & 0 & 0 \\
@@ -90,7 +90,7 @@ $\gk  := (p,\G_1,\G_2,\G_T,\mathcal{G}_1,\mathcal{G}_2,e)$, where Diffie-Hellman
 	$\pi_{\textsf{G-S}}:=([\pi_1]_1,[\pi_2]_1)$ where $[\pi_i]_2$ is the second component of $[\vec{\pi}_i]_2$ respectively.\\
 	The prover also computes a membership proof $\pi_{\psi}:=[\mathbf{M}_{\mathbf{\Delta}}]_1(\vec{a},r_1,r_4,r_5)^{\top}\in \G_1$ of 
 	$$\left[\begin{array}{c}
-	A\\
+	A-\alpha\\
 	\vec{c}_y\\
 	\end{array}\right]_1 \in \text{Im}\left(\left[\mathbf{M}\right]_1\right).$$	
 	Finally, it sends the proof $\pi:= \left(\pi_{\textsf{SNARK}},[\vec{c}_y]_1,[\vec{c}_{y_0}]_1, \pi_{\textsf{G-S}},\pi_\psi\right)$ to the verifier.
@@ -118,12 +118,12 @@ A\\
 
 If the verifier has accepted the membership proof, for soundness of $\psi$, there exists some $\vec{w} \in \Z_p^3$ such that
 $$\left[\begin{array}{c}
-A\\
+A-\alpha\\
 \vec{c}_y\\
 \end{array}\right]_1 = \left[\mathbf{M}\right]_1 \vec{w}.$$
 
 $A$ is a perfectly hiding commitment, so many $\vec{\hat{w}}$ may produce same 
-$$A=\left[\overline{\mathbf{M}}\right]_1\vec{\hat{w}}=\left[\overline{\mathbf{M}}\right]_1\vec{w},$$
+$$A-\alpha=\left[\overline{\mathbf{M}}\right]_1\vec{\hat{w}}=\left[\overline{\mathbf{M}}\right]_1\vec{w},$$
  but $\vec{c}_y$ is a perfectly binding commitment because is a G-S commitment in the soundness setting and moreover $\vec{c}_y$ is extractable. Thus, $[y]_1 \in \G_1$ is the unique possible opening to $[\vec{c}_y]_1$, which fixes the first $n_0$ components of $\vec{a}$ in $A$ (because $y$ is represented uniquely as $y=\sum_{i=0}^{n_0} a_i 2^i$).
 
 The SNARK proof is a proof of knowledge of some pre-image $\overline{y}$ of $H$ such that $H(\overline{y})=z$, so for SNARK soundness we have knowledge of this pre-image, which can be represented as $\overline{y} = \sum_{i=0}^{n_0} \overline{a}_i 2^i$.
