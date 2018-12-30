@@ -1,5 +1,17 @@
 \subsection{Intuition}
 
+In Zcash, shielded transactions give a proof of a large statement holds. This statement contains many smaller components, the most expensive component is one that proves knowledge of a leaf of a Merkle tree given $rt$. The leaf represents the secret serial number of a coin, which theoretically is known just for its owner. The owner is the prover who should prove knowledge of serial number $sn$ and the correct evaluation of the Merkle tree, i.e.
+\begin{itemize}
+	\item in the last level of the Merkle tree: $H(sn)$
+	\item previous level hashes concatenation of the result $y_1=H(sn)$ and other digest $y_2$: $H(y_2||H(y_1))$
+	\item $\cdots$
+	\item $H(y_{d} || H(y_{d-1} || \dots H(y_2||y_1))) = rt$
+\end{itemize}
+where $d$ is the depth of the Merkle tree, currently in Zcash they are using $d=32$.
 
-
+In order to prove this evaluation there are two options in literature:
+\begin{itemize}
+	\item Use a circuit that is a stitched composition of $C_H$, circuit of hash function $H$, and give a single proof for this circuit i.e. prove $H(y_{d-1}||H(y_{d-2}|| \cdots H(y_1||x)))=z$ once with a SNARK. Idea presented in \cite{SP:BCGGMT14} and implemented in $\href{https://github.com/zcash/zips/raw/master/protocol/protocol.pdf}{\text{Zcash protocol specification}}$.
+	\item Give multiple proofs for statement $H(x_1||H(x_2))=z$
+\end{itemize}
 \subsection{Proof}
