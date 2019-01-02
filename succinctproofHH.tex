@@ -1,17 +1,140 @@
-\subsection{Intuition}
+\subsection{State-of-the-art}
 
-In Zcash, shielded transactions give a proof of a large statement holds. This statement contains many smaller components, the most expensive component is one that proves knowledge of a leaf of a Merkle tree given $rt$. The leaf represents the secret serial number of a coin, which theoretically is known just for its owner. The owner is the prover who should prove knowledge of serial number $sn$ and the correct evaluation of the Merkle tree, i.e.
+Shielded transactions of Zcash give a proof for large statement. This statement contains many smaller components, the most expensive component is one that proves knowledge of a leaf of a Merkle tree given its root $rt$. The leaf represents the secret serial number of a coin, which theoretically is known just for its owner. The owner is the prover who should prove knowledge of serial number $sn$ and the correct evaluation of the Merkle tree, i.e.
 \begin{itemize}
-	\item in the last level of the Merkle tree: $H(sn)$
-	\item previous level hashes concatenation of the result $y_1=H(sn)$ and other digest $y_2$: $H(y_2||H(y_1))$
+	\item in the last level of the Merkle tree there is $H(sn)$ where $H$ is a hash function defined in $\{0,1\}^{n_0}$ and outputs a string in $\{0,1\}^{n_0/2}$
+	\item previous level contains a hash concatenation of the result $y_1=H(sn)$ and other digest $z_1$ in the same level: $H(z_1||y_1)$
 	\item $\cdots$
-	\item $H(y_{d} || H(y_{d-1} || \dots H(y_2||y_1))) = rt$
+	\item Finally, in the first level of the Merkle tree there is the root: 
+	$$H(z_{d} || H(z_{d-1} || \dots H(z_1||y_1))) = rt.$$
 \end{itemize}
 where $d$ is the depth of the Merkle tree, currently in Zcash they are using $d=32$.
 
-In order to prove this evaluation there are two options in literature:
+In the literature we can find two ways to prove above evaluations:
 \begin{itemize}
-	\item Use a circuit that is a stitched composition of $C_H$, circuit of hash function $H$, and give a single proof for this circuit i.e. prove $H(y_{d-1}||H(y_{d-2}|| \cdots H(y_1||x)))=z$ once with a SNARK. Idea presented in \cite{SP:BCGGMT14} and implemented in $\href{https://github.com/zcash/zips/raw/master/protocol/protocol.pdf}{\text{Zcash protocol specification}}$.
-	\item Give multiple proofs for statement $H(x_1||H(x_2))=z$
+	\item A single SNARK for circuit satisfiability where the circuit is a stitched composition of $d$ circuits $C_H$ of hash function $H$ with respective inputs in each $C_H$ i.e. prove $H(z_{d}||H(z_{d-1}|| \cdots H(z_1||H(x))))=y_d$ once with a SNARK. This idea was presented in \cite{SP:BCGGMT14} and it is implemented in \cite{zcash}.
+	\item Another way is presented in \cite{C:AgrGanMoh18}, where the authors proponed to give $d-1$ proofs each one for a statement of the form $H(z_i||y_i)=y_{i+1}$ for $i=2,\dots,d$ where $y_1=H(x)$, $x$ the secret serial number and $y_{d}$ is public, and also a proof for $H(x)=y_1$. (This idea is not developed, just mentioned). In addition, they said that there is a trade off between proof size and CRS size comparing these two approaches. In first construction, CRS is quadratic in the size of the circuit ($32\cdot m$ group elements, where $m$ is the number of gates of $C_H$) and proof size is constant (3 group elements using Groth SNARK). On the other hand, second construction has a CRS quadratic in the size of the circuit ($m$), but is linear in the size of the circuit ($m$) because they give a construction that is a composition of a SNARK with committed input/output wires and the knowledge of these committed input/output wires is proven by a linear proof. So, we do not think this trade-off exists because in both approaches CRS size is $O(m^2)$.	
 \end{itemize}
+
+
+We are going to present another construction with composite SNARK and committed input/outputs that is constant and \color{red} achieves less prover complexity?\color{black}, where we can reuse same CRS, that is an improvement of $\textsf{zk\mbox{-}InSNARK}$ and $\textsf{zk\mbox{-}IOSNARK}$ in \cite{C:AgrGanMoh18} in sense of proof size.
+
+\subsection{Our idea}
+
+Given a Merkle tree root $y_d$, the prover shows
+\begin{itemize}
+	\item $H(x)=y_1$ and $\com(y_1)$ with a SNARK 
+	\item  $H(z_i || \overline{y_{i}}) = y_{i+1}$ for $i=2,\dots,d-1$ and $\com(y_i)$ with a SNARK
+	\item $\overline{y_i} = y_i$ for $i=1,\dots,d-1$ with a membership proofs showing that each $\com(y_i)$ opens to the same value as input of SNARK in step $i$ and output of SNARK $i-1$
+\end{itemize}
+where $z_1,\dots,z_{d-1}$ are leafs in the Merkle tree no matter which ones, if the prover is not taking the correct leafs, from the collision resistance property of the hash, the digest would not match.
+
+In order to understand last proof, we present an example for $d=2$: let $A,B,C$ be a SNARK proof of
+$H(x)=y_1$  and $\overline{A},\overline{B},\overline{C}$ a SNARK proof of $H(z_1||\overline{y}_1)=y_2$, $\vec{c}_y=\com(y_1)$. We can prove that $\vec{c}_y$ is a commitment of the output of first SNARK and an output of second SNARK giving a membership proof of
+$$\left(\begin{array}{c}
+A\\
+\overline{A}\\
+\vec{c}_y\\
+\vec{c}_y
+\end{array}\right) \in \text{Im} \left(\mathbf{M}\right), $$
+where $\mathbf{M}=$
+$$\left(\tiny\begin{array}{c c c c c c c c c c c c c c c cc c c c c}
+ v_0(s) & \dots &  v_{\frac{n_0}{2}}(s)&  v_{\frac{n_0}{2}+1}(s)&\dots &  v_{n_0}(s) & v_{n_0+1}(s) & \dots & v_{n_0+m}(s)& \dots& v_{\frac{3n_0}{2}+m}& 0 & \dots& 0 & 0& \dots &0 & \delta & 0 & 0 & 0 \\
+ 0 &  \dots &  0& 0& \dots & 0 &  0 & \dots & 0 &\dots& 0 &v_0(s) &\dots &v_{n_0+m} &v_{n_0+m+1}& \dots & v_{\frac{3n_0}{2}+m}& 0&\delta  &0 &0\\
+ 0 & 0 & 0 & 2^0\vec{e}_2 &  \dots &  2^{n_0} \vec{e}_2 & 0 & \dots & 0 & \dots & 0 &0 & \dots & 0&0 &\dots & 0  & 0 & 0& \vec{u}_1 & \vec{u}_2\\
+ 0 & 0 & 0 & 0 &  \dots &  0 & 0 & \dots & 0 & \dots & 0 & 0& \dots & 0& 2^0\vec{e}_2&\dots & 2^{n_0} \vec{e}_2  & 0 & 0& \vec{u}_1 & \vec{u}_2\\
+\end{array}\right)$$ 
+$\in \Z_p^{6\times (m+3)}$
+and witness $\vec{w} = \left(\vec{a},\vec{\overline{a}},r_1,\overline{r}_1,s_1,s_2\right)$.
+
+Now, we write $\left(\begin{array}{ccccccccccc}v_0(s) & \dots &  v_{\frac{n_0}{2}}(s)&  v_{\frac{n_0}{2}+1}(s)&\dots &  v_{n_0}(s) & v_{n_0+1}(s) & \dots & v_{n_0+m}(s)& \dots& v_{\frac{3n_0}{2}+m}\end{array}\right)$ in blocks using $\square \square$ for input, $\bigstar$ for middle gates and $\blacksquare$ for output, to write the matrix $\mathbf{M}$. For an arbitrary $d$, we have
+$$\mathbf{M}=\left(\tiny\begin{array}{ccc ccc c ccc ccc cc c cc cc}
+\square\square & \bigstar & \blacksquare & & &  &  & & &  & & & &\delta & &  & &  & &\\
+& & & \square\square & \bigstar & \blacksquare   &  & & &  & & & &  &\delta & &  &  & &\\
+& & & & & & \ddots & & &  & & &  & & &\ddots &  &  & &\\
+& & &  &  &    &  &\square\square &\bigstar &\blacksquare  & & &  & & & & \delta &  & &\\
+& & &  &  &    &  & & &  &\square \square& \bigstar& \blacksquare & & & &  & \delta & &\\
+\square 2^0[\vec{e}_2]\dots 2^{\frac{n_0}{2}} \vec{e}_2 & \bigstar & \blacksquare & & &  &  & & &  & & & & &  & & & &[\vec{u}_1] &[\vec{u}_2]\\
+& & & \square\square & \bigstar&2^0[\vec{e}_2]\dots 2^{n_0} \vec{e}_2 &  & & &  & & & & &  & &  & &[\vec{u}_1] &[\vec{u}_2]\\
+& & & & & & \ddots & & &  & & &  & & & &  &  &\vdots &\vdots\\
+& & &  & & & &\square 2^0[\vec{e}_2]\dots 2^{\frac{n_0}{2}} \vec{e}_2 & \bigstar & \blacksquare & & & & & & & & & [\vec{u}_1] &[\vec{u}_2] \\
+& & &  & & & & & & &\square \square & \bigstar & 2^0[\vec{e}_2]\dots 2^{n_0} \vec{e}_2  & & & & & & [\vec{u}_1] &[\vec{u}_2] \\
+\end{array}\right)$$
+$\in \Z_p^{3d\times 2d\left(\frac{3n_0}{2}+m+3\right)}$, with a witness $\vec{w}=\left(\vec{a}_1,\overline{\vec{a}}_1,\dots,\vec{a}_d,\overline{\vec{a}}_d,r_1^1,\overline{r}_1^1,\dots,r_1^d,\overline{r}_1^d,s_{11},s_{12},\dots,s_{d1},s_{d2}\right)$.
+
+
+
 \subsection{Proof}
+
+Given a Merkle tree root $y_d$, we prove the knowledge of $x, y_1,\dots, y_{d-1}$ such that $y_1=H(x)$ and $y_{i+1}=H(z_i||y_i)$, where $x \in \{0,1\}^{n_0}$,  $y_i,z_i \in \{0,1\}^{n_0/2}$ for $i\in [d]$ for $i=2,\dots,d-1$.
+
+$\gk  := (p,\G_1,\G_2,\G_T,\mathcal{G}_1,\mathcal{G}_2,e)$, where $\SGBDHKE$ assumption hold.
+
+\paragraph{Setup.} \begin{itemize}
+	\item Algorithm $\algK_0(\gk)$: Sample $\mathbf{A} \gets \mathcal{D}_1$ \\
+	\item Algorithm $\algK_1(\gk,\mathbf{A} )$: For Groth-Sahai commitments sample a vector $\vec{u}_1 \gets \Z_p^2$, $\phi\gets \Z_p$ uniformly at random and compute a vector $\vec{u}_2\in \Z_p^2$ linear independent to $\vec{u}_1$.\\
+	For SNARK proof compute QAP of the circuit $C_H$, $\{v_i(X), w_i(X), y_i(X)\}_{i=1}^m$, $t(X)$ of degree $n$. Sample $s \gets \Z_p$ uniformly at random to compute evaluation of QAP polynomials at point $s$ in $\G_1, \G_2$. Sample also $\alpha, \beta,  \delta \in \Z_p$ uniformly at random.\\
+	For membership proof sample
+	$\mathbf{\Delta}\gets \Z_p^{2\times 3}$. Compute $[\mathbf{A}_{\mathbf{\Delta}}]_2=[\mathbf{\Delta}^{\top}\mathbf{A}]_2 \in \G_2^{3\times 1}$, $[\mathbf{M}_{\mathbf{\Delta}}]_1=[\mathbf{\Delta}\mathbf{M}]_1 \in \G_1^{3\times (m+3)}$, 
+	where $\mathbf{M}$ is same matrix described above.\\
+	The CRS includes the elements 	
+	\[\begin{split}
+	&\left(\gk,[\alpha]_{1},[\beta]_{1,2},[\delta]_{1,2},[\gamma]_2,[\mathbf{M}_{\mathbf{\Delta}}]_1,[\mathbf{A}]_2,[\mathbf{A}_{\mathbf{\Delta}}]_2,\left\{\left[s^{i}\right]_{1,2}\right\}_{i\in\{1,\dots,n-1\}},\left\{\left[\frac{s^i t(s)}{\delta}\right]_1\right\}_{i=0}^{n-2},\right.\\
+	&\left.
+	%\left\{\left[\frac{\beta v_i(s)+\alpha w_i(s) +y_i(s)}{\gamma}\right]_1\right\}_{i=0}^{n_0},
+	\left\{\left[\frac{\beta v_i(s)+\alpha w_i(s) +y_i(s)}{\delta}\right]_2\right\}_{i=n_0+1}^{m}\right)
+	\end{split}\]
+	
+	The trapdoor: $\tau = (%\vec{u}_1,\vec{u}_2, 
+	\alpha, \beta,\delta, \mathbf{\Delta})$.
+\end{itemize} 
+
+
+\noindent \textit{Prover}. 
+\begin{itemize}
+	\item The prover $\algP$ with input $(\textnormal{CRS},x)$ computes the following binary representation of $y= (P_x, P_y) \in \mathbb{F}_p$:
+	$(a_{0},\dots,a_{n_0}) \in \{0,1\}^{n_0+1}$, where $\sum_{i=0}^{n_0-1} a_i 2^i=P_x\in \mathbb{F}_p$ and $a_{n_0} = sign(P_y)$.\\
+	Evaluate $(a_{0},\dots,a_{n_0})$ in the circuit $C_H((a_{0},\dots,a_{n_0}))$ to obtain the whole assignment $\vec{a}\in \{0,1\}^{\frac{3n_0}{2}}$ ($y_1$) and compute corresponding SNARK proof $\pi_{\textsf{SNARK}^1}:=([A_1]_1,[B_1]_2,[C_1]_1)$ for circuit satisfiability of $C_H((a_0,\dots,a_{n_0}))=y_1$, where
+	\[\begin{split}
+	[A_1]_1=&\left[\alpha + \sum_{i=0}^m a_i v_i(s) + r_1^1 \delta\right]_1\\
+	[B_1]_2 = &\left[\beta + \sum_{i=0}^m a_i w_i(s) + r_2^1 \delta\right]_2\\
+	[C_1]_1 = &\left[\frac{\sum_{i=0}^m a_i\left(\beta v_i(s)+\alpha w_i(s)+y_i(s)+h(s)t(s)\right)}{\delta}+Ar_2^1+B r_1^1+ r_1^1r_2^1\delta\right]_1,
+	\end{split}\]
+	for some $r_1,r_2 \gets \Z_p$ chosen uniformly at random.\\
+	Successively, evaluate concatenation of $z_j$ and binary representation of $y_j$ and construct the corresponding SNARK for correct evaluation:
+	\[\begin{split}
+	[A_j]_1=&\left[\alpha + \sum_{i=0}^m a_i^j v_i(s) + r_1^j \delta\right]_1\\
+	[B_j]_2 = &\left[\beta + \sum_{i=0}^m a_i^j w_i(s) + r_2^j \delta\right]_2\\
+	[C_j]_1 = &\left[\frac{\sum_{i=0}^m a_i^j\left(\beta v_i(s)+\alpha w_i(s)+y_i(s)+h(s)t(s)\right)}{\delta}+Ar_2^j+B r_1^j+ r_1^jr_2^j\delta\right]_1,
+\end{split}\]
+	for $j=2,\dots,d-1$, $\pi_{\textsf{SNARK}^j}:=([A_j]_1,[B_j]_2,[C_j]_1)$.
+	Compute G-S commitments of each $y_j$: $\left[\vec{c}_{y^j}\right]_1:=\sum a^j_i 2^i [\vec{e}_2]_1+s_{j1}[\vec{u}_1]_1 + s_{j2}[\vec{u}_2]_1$, for some $s_{j1},s_{j2}\gets \Z_p$ chosen uniformly at random, for $j=1,\dots,d-1$.\\
+	The prover also computes a membership proof $$\pi_{\psi}:=[\mathbf{M}_{\mathbf{\Delta}}]_1(\vec{a}_1,\overline{\vec{a}}_1,\dots,\vec{a}_d,\overline{\vec{a}}_d,r_1^1,\overline{r}_1^1,\dots,r_1^d,\overline{r}_1^d,s_{11},s_{12},\dots,s_{d1},s_{d2})^{\top}\in \G_1$$ of 
+	$$\left[\begin{array}{c}
+	A_1-\alpha\\
+	\vdots\\
+	A_d -\alpha\\
+	\vec{c}_{y^1}\\
+	\vdots\\
+		\vec{c}_{y^{d-1}}\\
+	\end{array}\right]_1 \in \text{Im}\left(\left[\mathbf{M}\right]_1\right).$$	
+	Finally, it sends the proof $\pi:= \left(\pi_{\textsf{SNARK}^1},\dots,\pi_{\textsf{SNARK}^d},[\vec{c}_y^1]_1,\dots,[\vec{c}_y^{d-1}]_1,\pi_\psi\right)$ to the verifier.
+\end{itemize}
+
+\noindent \textit{Verifier}. 
+
+The verifier $\algV$ with input $(\textnormal{CRS},\pi)$ verify the proofs $\pi_{\textsf{SNARK}^j}$ for $j=1,\dots,d$ and membership proof $\pi_{\psi}$, respectively:
+\[\begin{split}
+&e\left(\left[A_j\right]_1,\left[B_j\right]_2\right)=\left([\alpha]_1,[\beta]_2\right)+e\left([C_j]_1,[\delta]_2\right) \textnormal{ for }j=1,\dots,d\\
+&e\left(\left[\begin{array}{c}
+A_1-\alpha\\
+\vdots\\
+A_d -\alpha\\
+\vec{c}_{y^1}\\
+\vdots\\
+\vec{c}_{y^{d-1}}\\
+\end{array}\right]_1^{\top},\left[\mathbf{A}_{\mathbf{\Delta}}\right]_2\right)=e\left(\left[\pi_{\psi}\right]_1^{\top},\left[\mathbf{A}\right]_2\right).\\
+\end{split}\]
+
+\subsubsection*{Soundness}
+
